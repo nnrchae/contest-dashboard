@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>최신 디자인 공모전 대시보드</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #FAF8F5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #2C2C2C;
+            padding: 40px 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 40px; }
+        header h1 { font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #111827; }
+        header p { color: #6B7280; font-size: 16px; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            text-decoration: none;
+            color: inherit;
+            background-color: #FFFFFF;
+            border: 1px solid #E8E2D9;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .badge {
+            background-color: #EEF2FF;
+            color: #4338CA;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .dday { color: #EF4444; font-size: 13px; font-weight: 700; }
+        .title { font-size: 18px; font-weight: bold; margin-bottom: 8px; line-height: 1.4; color: #1F2937; }
+        .organizer { color: #6B7280; font-size: 14px; margin-bottom: 16px; }
+        .score-box {
+            background-color: #F9FAFB;
+            border: 1px solid #F3F4F6;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+        }
+        .score-title { font-weight: bold; color: #111827; font-size: 14px; margin-bottom: 4px; }
+        .score-reason { font-size: 13px; color: #4B5563; line-height: 1.4; }
+        .summary { font-size: 13px; color: #374151; line-height: 1.4; }
+        .card-footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #F3F4F6;
+            text-align: right;
+            font-size: 13px;
+            color: #2563EB;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 최신 디자인 공모전 대시보드</h1>
+            <p>AI가 분석한 포트폴리오 가치 기반 추천 공모전 목록입니다.</p>
+        </header>
+        <div class="grid" id="contestGrid"></div>
+    </div>
+
+    <script>
+        const contests = [{"id": 1, "title": "2026년 스포츠토토 숏폼 공모전", "organizer": "국민체육진흥공단", "organizer_type": "지자체/공공기관", "deadline": "D-23 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110678", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 스포츠토토 숏폼 공모전"}, {"id": 2, "title": "[과학기술정보통신부] 제3회 미래융합인재 발굴 소프트웨어 챌린지", "organizer": "과학기술정보통신부", "organizer_type": "지자체/공공기관", "deadline": "D-32 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110675", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "제3회 미래융합인재 발굴 소프트웨어 챌린지"}, {"id": 3, "title": "2026 연암대학교 스마트원예 전공 경진대회 (전국 고등학생)", "organizer": "연암대학교", "organizer_type": "기타", "deadline": "D-10 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110655", "portfolio_value_score": 4, "portfolio_reason": "다양한 경험을 쌓을 수 있는 기회입니다. 전국 또는 국제 규모로 경쟁력과 성과를 강조하기 좋습니다.", "summary": "2026 연암대학교 스마트원예 전공 경진대회 (전국 고등학생)"}, {"id": 4, "title": "[문화체육관광부×한국문화정보원] 문화데이터 활용 영상 제작 AI 챌린지", "organizer": "한국문화정보원", "organizer_type": "지자체/공공기관", "deadline": "D-23 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110633", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "문화데이터 활용 영상 제작 AI 챌린지"}, {"id": 5, "title": "[무료] [CJ올리브네트웍스] AI 서비스 기획자 교육 과정 참여자 모집 (L.L.M. 아카데미)", "organizer": "CJ올리브네트웍스", "organizer_type": "대기업", "deadline": "D-8 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110623", "portfolio_value_score": 4, "portfolio_reason": "대기업 주최로 높은 인지도와 전문성을 어필하기 좋습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "[무료] AI 서비스 기획자 교육 과정 참여자 모집 (L.L.M. 아카데미)"}, {"id": 6, "title": "2026년 제6회 K-인공지능(AI) 제조데이터 분석 경진대회", "organizer": "중소벤처기업부", "organizer_type": "지자체/공공기관", "deadline": "D-12 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110622", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 제6회 K-인공지능(AI) 제조데이터 분석 경진대회"}, {"id": 7, "title": "2026 0924영상제 영상 공모전", "organizer": "하남시청소년수련관", "organizer_type": "지자체/공공기관", "deadline": "D-42 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110585", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 0924영상제 영상 공모전"}, {"id": 8, "title": "제5회 2026 대한민국 고등학생 AI•SW 개발 공모전", "organizer": "한국인공지능•소프트웨어산업협회", "organizer_type": "지자체/공공기관", "deadline": "D-22 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110530", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "제5회 2026 대한민국 고등학생 AI•SW 개발 공모전"}, {"id": 9, "title": "7th Da-Ho Award Asian International Short Film Competition(단편영화 공모전)", "organizer": "Da-Ho Construction Co., Ltd.", "organizer_type": "중소기업", "deadline": "D-148 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110179", "portfolio_value_score": 4, "portfolio_reason": "실무 경험을 쌓기에 좋은 기회입니다. 전국 또는 국제 규모로 경쟁력과 성과를 강조하기 좋습니다.", "summary": "7th Da-Ho Award Asian International Short Film Competition(단편영화 공모전)"}, {"id": 10, "title": "[대통령직속 빛의 위원회] 빛의 혁명 상징 디자인 공모전", "organizer": "대통령직속 빛의 위원회", "organizer_type": "지자체/공공기관", "deadline": "D-1 마감임박", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110012", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "빛의 혁명 상징 디자인 공모전"}, {"id": 11, "title": "제8회 오티콘챌린지 공모전", "organizer": "오티콘, 다이어텍", "organizer_type": "중소기업", "deadline": "D-8 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=109883", "portfolio_value_score": 4, "portfolio_reason": "실무 경험을 쌓기에 좋은 기회입니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "제8회 오티콘챌린지 공모전"}, {"id": 12, "title": "2026년 디지털윤리 창작콘텐츠 공모전", "organizer": "방송미디어통신위원회", "organizer_type": "지자체/공공기관", "deadline": "D-27 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=107830", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 디지털윤리 창작콘텐츠 공모전"}, {"id": 13, "title": "2026 남이섬 AI 영상 광고 숏폼 가을 공모전", "organizer": "(주)남이섬", "organizer_type": "중소기업", "deadline": "D-25 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110783", "portfolio_value_score": 4, "portfolio_reason": "실무 경험을 쌓기에 좋은 기회입니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 남이섬 AI 영상 광고 숏폼 가을 공모전"}, {"id": 14, "title": "[안무가 매칭 프로젝트 제28회 생생 춤 페스티벌] 생생 리포터 모집", "organizer": "(사)한국현대무용협회", "organizer_type": "지자체/공공기관", "deadline": "D-6 마감임박", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110782", "portfolio_value_score": 2, "portfolio_reason": "특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "생생 리포터 모집"}, {"id": 15, "title": "17회 부산평화영화제 자원활동가 모집", "organizer": "부산어린이어깨동무", "organizer_type": "지자체/공공기관", "deadline": "D-15 접수중", "link": "https://www.wevity.com/?c=find&s=1&cidx=14&gbn=view&gp=1&ix=110779", "portfolio_value_score": 2, "portfolio_reason": "특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "17회 부산평화영화제 자원활동가 모집"}, {"id": 16, "title": "2026년 정신건강의 날 기념 『정신건강 캐릭터』공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35982", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 정신건강의 날 기념 『정신건강 캐릭터』공모전"}, {"id": 17, "title": "제23회 폐의 날 기념 우리 가족 폐질환 이야기 수기 공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35980", "portfolio_value_score": 3, "portfolio_reason": "특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "제23회 폐의 날 기념 우리 가족 폐질환 이야기 수기 공모전"}, {"id": 18, "title": "제5회 부‧울‧경대학생스피치대회", "organizer": "주최사 참조", "organizer_type": "기타", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35977", "portfolio_value_score": 2, "portfolio_reason": "특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "제5회 부‧울‧경대학생스피치대회"}, {"id": 19, "title": "[2026 디지털헤리티지페스타] AI 헤리티지 공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35975", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "AI 헤리티지 공모전"}, {"id": 20, "title": "대한불교조계종 및 사찰 콘텐츠 기반 문화상품 공모전", "organizer": "주최사 참조", "organizer_type": "기타", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35973", "portfolio_value_score": 4, "portfolio_reason": "다양한 경험을 쌓을 수 있는 기회입니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "대한불교조계종 및 사찰 콘텐츠 기반 문화상품 공모전"}, {"id": 21, "title": "제6회 K-인공지능 제조데이터 분석 경진대회", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35972", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "제6회 K-인공지능 제조데이터 분석 경진대회"}, {"id": 22, "title": "2026 AI·디지털 기반 사회문제 해결 챌린지", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35962", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 AI·디지털 기반 사회문제 해결 챌린지"}, {"id": 23, "title": "2026 서울관광재단 비짓서울 API 데이터‧AI 활용 아이디 공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35954", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 서울관광재단 비짓서울 API 데이터‧AI 활용 아이디 공모전"}, {"id": 24, "title": "제24회 대한민국창작만화공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35949", "portfolio_value_score": 5, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "제24회 대한민국창작만화공모전"}, {"id": 25, "title": "2026년 한국환경보전원 대국민 환경혁신 아이디어 공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35948", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 한국환경보전원 대국민 환경혁신 아이디어 공모전"}, {"id": 26, "title": "[영화·영상 공모] 제6회 FILM IN DAEDEOK 경쟁부문 출품 공", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35945", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "제6회 FILM IN DAEDEOK 경쟁부문 출품 공"}, {"id": 27, "title": "[2026 제10회 대한민국 청년의 날] 2026 청년가요제 자유곡 부문", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35944", "portfolio_value_score": 3, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. 특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "2026 청년가요제 자유곡 부문"}, {"id": 28, "title": "2026년 GovTech 창업 경진대회", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35943", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 GovTech 창업 경진대회"}, {"id": 29, "title": "2026년 동작구 학교폭력 예방 광고영상제", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35942", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026년 동작구 학교폭력 예방 광고영상제"}, {"id": 30, "title": "2026년 대구 달서구 김밥왕 콘테스트", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35941", "portfolio_value_score": 2, "portfolio_reason": "특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "2026년 대구 달서구 김밥왕 콘테스트"}, {"id": 31, "title": "2026 전국 로켓피치 경진대회", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35939", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. 전국 또는 국제 규모로 경쟁력과 성과를 강조하기 좋습니다.", "summary": "2026 전국 로켓피치 경진대회"}, {"id": 32, "title": "제22회 한국능률협회컨설팅 경영혁신 대학(원)생 공모전", "organizer": "주최사 참조", "organizer_type": "중소기업", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35937", "portfolio_value_score": 3, "portfolio_reason": "실무 경험을 쌓기에 좋은 기회입니다.", "summary": "제22회 한국능률협회컨설팅 경영혁신 대학(원)생 공모전"}, {"id": 33, "title": "[세븐일레븐] K-비빔밥 AI 광고제 “ㄸ뚜ㅁ뜨뜨\"", "organizer": "주최사 참조", "organizer_type": "대기업", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35929", "portfolio_value_score": 5, "portfolio_reason": "대기업 주최로 높은 인지도와 전문성을 어필하기 좋습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "K-비빔밥 AI 광고제 “ㄸ뚜ㅁ뜨뜨\""}, {"id": 34, "title": "2026 경기도한의사회 한의약 컨텐츠 공모전", "organizer": "주최사 참조", "organizer_type": "기타", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35927", "portfolio_value_score": 4, "portfolio_reason": "다양한 경험을 쌓을 수 있는 기회입니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 경기도한의사회 한의약 컨텐츠 공모전"}, {"id": 35, "title": "2026 데이터+AI 혁신챌린지 ‘데이터안심구역 경진대회’ 참가자 모집", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35921", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 데이터+AI 혁신챌린지 ‘데이터안심구역 경진대회’ 참가자 모집"}, {"id": 36, "title": "2026 뉴스빅데이터 해커톤", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35919", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 뉴스빅데이터 해커톤"}, {"id": 37, "title": "2026 한미동맹주간 숏폼 공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35918", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 한미동맹주간 숏폼 공모전"}, {"id": 38, "title": "2026 은행나무길 거리예술제 거리예술 공연팀 모집 공고", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35917", "portfolio_value_score": 2, "portfolio_reason": "특정 분야의 경험을 쌓는 데 좋지만, 일반적인 디자인/기술 포트폴리오에는 직접적인 연관성이 낮을 수 있습니다.", "summary": "2026 은행나무길 거리예술제 거리예술 공연팀 모집 공고"}, {"id": 39, "title": "2026 제12회 동편제국악축제 포스터 디자인 공모전", "organizer": "주최사 참조", "organizer_type": "지자체/공공기관", "deadline": "접수중", "link": "https://www.campuspick.com/contest/view?id=35916", "portfolio_value_score": 4, "portfolio_reason": "공신력 있는 기관 주최로 포트폴리오 가치가 높습니다. AI, 디지털, 디자인 등 최신 기술 및 창의적 분야와 연관되어 활용도가 높습니다.", "summary": "2026 제12회 동편제국악축제 포스터 디자인 공모전"}];
+        const grid = document.getElementById('contestGrid');
+
+        contests.forEach(item => {
+            const card = document.createElement('a');
+            card.className = 'card';
+            card.href = item.link && item.link !== '#' ? item.link : '#';
+            card.target = '_blank';
+            card.rel = 'noopener noreferrer';
+
+            card.innerHTML = `
+                <div>
+                    <div class="card-header">
+                        <span class="badge">${item.organizer_type || '공모전'}</span>
+                        <span class="dday">${item.deadline || item.dday || '접수중'}</span>
+                    </div>
+                    <div class="title">${item.title}</div>
+                    <div class="organizer">🏢 ${item.organizer}</div>
+                    
+                    ${item.portfolio_value_score ? `
+                    <div class="score-box">
+                        <div class="score-title">⭐ 포트폴리오 가치: ${item.portfolio_value_score} / 5</div>
+                        <div class="score-reason">${item.portfolio_reason || ''}</div>
+                    </div>` : ''}
+
+                    ${item.summary ? `<div class="summary">💡 ${item.summary}</div>` : ''}
+                </div>
+                <div class="card-footer">상세내용 및 지원하기 ↗</div>
+            `;
+            grid.appendChild(card);
+        });
+    </script>
+</body>
+</html>

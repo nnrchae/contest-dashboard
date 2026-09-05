@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>자산 및 지출 관리 대시보드</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-income: #10b981;
+      --accent-expense: #ef4444;
+      --accent-blue: #3b82f6;
+      --accent-hover: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+    }
+
+    /* 1. 상단 요약 카드 */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-title {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .card-value.income { color: var(--accent-income); }
+    .card-value.expense { color: var(--accent-expense); }
+    .card-value.balance { color: var(--text-primary); }
+
+    /* 메인 그리드 (입력폼 + 차트) */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 2. 내역 입력 폼 */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .form-control {
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .btn-submit {
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    .btn-submit:hover {
+      background-color: var(--accent-hover);
+    }
+
+    /* 3. 시각화 차트 */
+    .chart-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 250px;
+      max-height: 280px;
+    }
+
+    /* 4. 내역 리스트 */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      color: var(--text-secondary);
+      font-weight: 500;
+      background-color: rgba(15, 23, 42, 0.4);
+    }
+
+    tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge.income { background-color: rgba(16, 185, 129, 0.15); color: var(--accent-income); }
+    .badge.expense { background-color: rgba(239, 68, 68, 0.15); color: var(--accent-expense); }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-delete:hover {
+      color: var(--accent-expense);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>자산 관리 대시보드</h1>
+    </header>
+
+    <!-- 1. 상단 요약 카드 -->
+    <section class="summary-grid">
+      <div class="card">
+        <div class="card-title">💰 현재 잔액</div>
+        <div class="card-value balance" id="totalBalance">0 원</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 총 수입</div>
+        <div class="card-value income" id="totalIncome">+0 원</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 총 지출</div>
+        <div class="card-value expense" id="totalExpense">-0 원</div>
+      </div>
+    </section>
+
+    <!-- 메인 입출력 영역 -->
+    <section class="main-grid">
+      <!-- 2. 내역 입력 폼 -->
+      <div class="card">
+        <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">내역 입력</h2>
+        <form id="transactionForm">
+          <div class="form-group">
+            <label for="date">날짜</label>
+            <input type="date" id="date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="type">구분</label>
+            <select id="type" class="form-control" required>
+              <option value="지출">지출</option>
+              <option value="수입">수입</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="category">카테고리</label>
+            <select id="category" class="form-control" required>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="amount">금액</label>
+            <input type="number" id="amount" class="form-control" placeholder="0" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="memo">메모</label>
+            <input type="text" id="memo" class="form-control" placeholder="내용을 입력하세요">
+          </div>
+          <button type="submit" class="btn-submit">등록하기</button>
+        </form>
+      </div>
+
+      <!-- 3. 지출 시각화 차트 -->
+      <div class="card">
+        <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">카테고리별 지출 현황</h2>
+        <div class="chart-container">
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 내역 리스트 -->
+    <section class="card">
+      <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">최근 거래 내역</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>구분</th>
+              <th>카테고리</th>
+              <th>메모</th>
+              <th>금액</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="transactionList">
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const categories = {
+      지출: ['식비', '주거', '교통', '쇼핑', '문화/취미', '기타'],
+      수입: ['월급', '부수입', '투자', '기타']
+    };
+
+    let transactions = JSON.parse(localStorage.getItem('my_transactions')) || [];
+    let chartInstance = null;
+
+    const form = document.getElementById('transactionForm');
+    const typeSelect = document.getElementById('type');
+    const categorySelect = document.getElementById('category');
+    const dateInput = document.getElementById('date');
+
+    function init() {
+      dateInput.value = new Date().toISOString().substring(0, 10);
+      updateCategoryOptions();
+      render();
+    }
+
+    function updateCategoryOptions() {
+      const selectedType = typeSelect.value;
+      categorySelect.innerHTML = categories[selectedType]
+        .map(cat => `<option value="${cat}">${cat}</option>`)
+        .join('');
+    }
+
+    typeSelect.addEventListener('change', updateCategoryOptions);
+
+    function saveTransactions() {
+      localStorage.setItem('my_transactions', JSON.stringify(transactions));
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const newTransaction = {
+        id: Date.now(),
+        date: document.getElementById('date').value,
+        type: document.getElementById('type').value,
+        category: document.getElementById('category').value,
+        amount: Number(document.getElementById('amount').value),
+        memo: document.getElementById('memo').value || '-'
+      };
+
+      transactions.push(newTransaction);
+      saveTransactions();
+      render();
+
+      document.getElementById('amount').value = '';
+      document.getElementById('memo').value = '';
+    });
+
+    window.deleteTransaction = function(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      saveTransactions();
+      render();
+    };
+
+    function render() {
+      renderSummary();
+      renderList();
+      renderChart();
+    }
+
+    function renderSummary() {
+      const income = transactions
+        .filter(t => t.type === '수입')
+        .reduce((acc, t) => acc + t.amount, 0);
+
+      const expense = transactions
+        .filter(t => t.type === '지출')
+        .reduce((acc, t) => acc + t.amount, 0);
+
+      const balance = income - expense;
+
+      document.getElementById('totalIncome').textContent = `+${income.toLocaleString()} 원`;
+      document.getElementById('totalExpense').textContent = `-${expense.toLocaleString()} 원`;
+      document.getElementById('totalBalance').textContent = `${balance.toLocaleString()} 원`;
+    }
+
+    function renderList() {
+      const listEl = document.getElementById('transactionList');
+      const sortedData = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+      if (sortedData.length === 0) {
+        listEl.innerHTML = `<tr><td colspan="6" class="empty-state">등록된 내역이 없습니다.</td></tr>`;
+        return;
+      }
+
+      listEl.innerHTML = sortedData.map(t => {
+        const isIncome = t.type === '수입';
+        const amountFormatted = `${isIncome ? '+' : '-'}${t.amount.toLocaleString()} 원`;
+        
+        return `
+          <tr>
+            <td>${t.date}</td>
+            <td><span class="badge ${isIncome ? 'income' : 'expense'}">${t.type}</span></td>
+            <td>${t.category}</td>
+            <td>${t.memo}</td>
+            <td style="font-weight: 600; color: ${isIncome ? 'var(--accent-income)' : 'var(--text-primary)'};">
+              ${amountFormatted}
+            </td>
+            <td>
+              <button class="btn-delete" onclick="deleteTransaction(${t.id})">삭제</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderChart() {
+      if (typeof Chart === 'undefined') return;
+
+      const ctx = document.getElementById('expenseChart').getContext('2d');
+      const expenseData = transactions.filter(t => t.type === '지출');
+      const categoryTotals = {};
+
+      expenseData.forEach(t => {
+        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+      });
+
+      const labels = Object.keys(categoryTotals);
+      const data = Object.values(categoryTotals);
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      if (labels.length === 0) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              '#ef4444', '#f59e0b', '#10b981', '#3b82f6', 
+              '#8b5cf6', '#ec4899', '#64748b'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#94a3b8',
+                font: { size: 12 },
+                boxWidth: 12
+              }
+            }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
