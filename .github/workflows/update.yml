@@ -1,0 +1,40 @@
+name: Auto Update Contests
+
+on:
+  schedule:
+    # 매일 아침 9시(한국 시간 기준) 자동 실행 (UTC 시간으로는 밤 12시)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 수동으로도 언제든 실행 버튼을 누를 수 있게 허용
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 google-genai
+
+      - name: Run Design.py to generate index.html
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 Design.py
+
+      - name: Deploy index.html to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: false

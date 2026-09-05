@@ -10,8 +10,12 @@ from google.genai import types
 # ---------------------------------------------------------
 # 1. Gemini Client 및 헤더 설정
 # ---------------------------------------------------------
-GEMINI_API_KEY = "AIzaSyBpIHqZZHugcWHlHDVfxG73E2ISMe68GgE"
+import os
+# 깃허브 시크릿 또는 내 PC 환경변수에서 안전하게 가져오기
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "여기에_기존키_넣어두면_로컬에서도작동") 
 client = genai.Client(api_key=GEMINI_API_KEY)
+
+
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
