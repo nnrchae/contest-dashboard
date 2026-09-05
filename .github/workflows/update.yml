@@ -2,9 +2,8 @@ name: Auto Update Contests
 
 on:
   schedule:
-    # 매일 아침 9시(한국 시간 기준) 자동 실행 (UTC 시간으로는 밤 12시)
     - cron: '0 0 * * *'
-  workflow_dispatch: # 수동으로도 언제든 실행 버튼을 누를 수 있게 허용
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,11 +24,14 @@ jobs:
         run: |
           pip install requests beautifulsoup4 google-genai
 
-      - name: Run Design.py to generate index.html
+      - name: Find and Run Design.py
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python3 Design.py
+          # 저장소 어디에 있든 Design.py를 찾아 실행
+          PYTHON_FILE=$(find . -name "Design.py" | head -n 1)
+          echo "Found python file: $PYTHON_FILE"
+          python3 "$PYTHON_FILE"
 
       - name: Deploy index.html to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
