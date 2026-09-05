@@ -24,14 +24,20 @@ jobs:
         run: |
           pip install requests beautifulsoup4 google-genai
 
-      - name: Find and Run Design.py
+      - name: Check files and Run
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # 저장소 어디에 있든 Design.py를 찾아 실행
-          PYTHON_FILE=$(find . -name "Design.py" | head -n 1)
-          echo "Found python file: $PYTHON_FILE"
-          python3 "$PYTHON_FILE"
+          echo "Current directory files:"
+          ls -la
+          
+          # 만약 Design.py가 없으면 에러를 내지 말고 현재 폴더 구조 확인
+          if [ -f "Design.py" ]; then
+            python3 Design.py
+          else
+            echo "Design.py not found in root, searching..."
+            find . -name "Design.py" -exec python3 {} \;
+          fi
 
       - name: Deploy index.html to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
