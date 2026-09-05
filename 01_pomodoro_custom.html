@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모던 커스텀 포모도로 & To-Do</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .mode-switch {
+            display: flex;
+            background: #f0f2f5;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #666;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #ffffff;
+            color: #222;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .time-setting-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fafafa;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            gap: 8px;
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .setting-input {
+            width: 46px;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+            outline: none;
+        }
+
+        .setting-input:focus {
+            border-color: #222;
+        }
+
+        .apply-btn {
+            padding: 6px 12px;
+            background-color: #e9ecef;
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .apply-btn:hover {
+            background-color: #dee2e6;
+        }
+
+        .timer-display {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            color: #111;
+            margin: 0.8rem 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background-color: #222;
+            color: #fff;
+            flex: 2;
+        }
+
+        .btn-primary:hover {
+            background-color: #333;
+        }
+
+        .btn-secondary {
+            background-color: #e9ecef;
+            color: #495057;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background-color: #dee2e6;
+        }
+
+        .session-tracker {
+            border-top: 1px solid #eee;
+            padding-top: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .stamps {
+            display: flex;
+            justify-content: flex-start;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-height: 24px;
+        }
+
+        .stamp {
+            width: 22px;
+            height: 22px;
+            background-color: #4caf50;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .todo-section {
+            border-top: 1px solid #eee;
+            padding-top: 1.2rem;
+            text-align: left;
+        }
+
+        .todo-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .todo-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .todo-input:focus {
+            border-color: #222;
+        }
+
+        .todo-add-btn {
+            padding: 10px 16px;
+            background-color: #222;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .todo-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px;
+            border-bottom: 1px solid #f8f8f8;
+            font-size: 0.95rem;
+        }
+
+        .todo-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .todo-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #222;
+            cursor: pointer;
+        }
+
+        .todo-item.completed span {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #ff4d4f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="mode-switch">
+        <button class="mode-btn active" id="workModeBtn" onclick="switchMode('work')">작업 모드</button>
+        <button class="mode-btn" id="breakModeBtn" onclick="switchMode('break')">휴식 모드</button>
+    </div>
+
+    <div class="time-setting-section">
+        <div class="setting-group">
+            <label for="workInput">작업:</label>
+            <input type="number" id="workInput" class="setting-input" min="1" max="180" value="25">분
+        </div>
+        <div class="setting-group">
+            <label for="breakInput">휴식:</label>
+            <input type="number" id="breakInput" class="setting-input" min="1" max="60" value="5">분
+        </div>
+        <button class="apply-btn" onclick="applyCustomTime()">적용</button>
+    </div>
+
+    <div class="timer-display" id="timeDisplay">25:00</div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="startBtn" onclick="toggleTimer()">시작</button>
+        <button class="btn btn-secondary" onclick="resetTimer()">리셋</button>
+    </div>
+
+    <div class="session-tracker">
+        <div class="section-title">오늘 완료한 포모도로</div>
+        <div class="stamps" id="stampContainer"></div>
+    </div>
+
+    <div class="todo-section">
+        <div class="section-title">오늘 할 일</div>
+        <form class="todo-form" onsubmit="addTodo(event)">
+            <input type="text" class="todo-input" id="todoInput" placeholder="할 일을 입력하세요..." required>
+            <button type="submit" class="todo-add-btn">추가</button>
+        </form>
+        <ul class="todo-list" id="todoList"></ul>
+    </div>
+</div>
+
+<script>
+    let workMinutes = 25;
+    let breakMinutes = 5;
+
+    let workTime = workMinutes * 60;
+    let breakTime = breakMinutes * 60;
+
+    let currentMode = 'work';
+    let timeLeft = workTime;
+    let timerInterval = null;
+    let isRunning = false;
+    
+    let completedSessions = 0;
+    let todos = [];
+
+    try {
+        completedSessions = parseInt(localStorage.getItem('pomodoroStamps')) || 0;
+        todos = JSON.parse(localStorage.getItem('pomodoroTodos')) || [];
+        
+        const savedWork = parseInt(localStorage.getItem('pomodoroWorkMin'));
+        const savedBreak = parseInt(localStorage.getItem('pomodoroBreakMin'));
+        if (savedWork) workMinutes = savedWork;
+        if (savedBreak) breakMinutes = savedBreak;
+    } catch (e) {
+        console.warn('로컬 스토리지 접근 예외 처리', e);
+    }
+
+    const timeDisplay = document.getElementById('timeDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const workModeBtn = document.getElementById('workModeBtn');
+    const breakModeBtn = document.getElementById('breakModeBtn');
+    const stampContainer = document.getElementById('stampContainer');
+    const todoInput = document.getElementById('todoInput');
+    const todoList = document.getElementById('todoList');
+    const workInput = document.getElementById('workInput');
+    const breakInput = document.getElementById('breakInput');
+
+    if (workInput) workInput.value = workMinutes;
+    if (breakInput) breakInput.value = breakMinutes;
+    workTime = workMinutes * 60;
+    breakTime = breakMinutes * 60;
+    timeLeft = workTime;
+
+    function playBeepSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1.2);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 1.2);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function applyCustomTime() {
+        const newWork = parseInt(workInput.value);
+        const newBreak = parseInt(breakInput.value);
+
+        if (isNaN(newWork) || newWork < 1 || isNaN(newBreak) || newBreak < 1) {
+            alert('1분 이상의 올바른 숫자를 입력해 주세요.');
+            return;
+        }
+
+        workMinutes = newWork;
+        breakMinutes = newBreak;
+        workTime = workMinutes * 60;
+        breakTime = breakMinutes * 60;
+
+        try {
+            localStorage.setItem('pomodoroWorkMin', workMinutes);
+            localStorage.setItem('pomodoroBreakMin', breakMinutes);
+        } catch(e){}
+
+        resetTimer();
+    }
+
+    function updateDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        timeDisplay.textContent = formattedTime;
+        document.title = `${formattedTime} - 포모도로`;
+    }
+
+    function toggleTimer() {
+        if (isRunning) {
+            pauseTimer();
+        } else {
+            startTimer();
+        }
+    }
+
+    function startTimer() {
+        isRunning = true;
+        startBtn.textContent = '일시정지';
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateDisplay();
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                playBeepSound();
+                
+                if (currentMode === 'work') {
+                    completedSessions++;
+                    try { localStorage.setItem('pomodoroStamps', completedSessions); } catch(e){}
+                    renderStamps();
+                    switchMode('break');
+                } else {
+                    switchMode('work');
+                }
+                
+                pauseTimer();
+            }
+        }, 1000);
+    }
+
+    function pauseTimer() {
+        isRunning = false;
+        startBtn.textContent = '시작';
+        clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+        pauseTimer();
+        timeLeft = currentMode === 'work' ? workTime : breakTime;
+        updateDisplay();
+    }
+
+    function switchMode(mode) {
+        if (currentMode === mode && isRunning) return;
+
+        currentMode = mode;
+        if (mode === 'work') {
+            workModeBtn.classList.add('active');
+            breakModeBtn.classList.remove('active');
+            timeLeft = workTime;
+        } else {
+            breakModeBtn.classList.add('active');
+            workModeBtn.classList.remove('active');
+            timeLeft = breakTime;
+        }
+        
+        pauseTimer();
+        updateDisplay();
+    }
+
+    function renderStamps() {
+        stampContainer.innerHTML = '';
+        for (let i = 0; i < completedSessions; i++) {
+            const stamp = document.createElement('div');
+            stamp.className = 'stamp';
+            stamp.title = `${i + 1}번째 완료`;
+            stampContainer.appendChild(stamp);
+        }
+    }
+
+    function saveTodos() {
+        try {
+            localStorage.setItem('pomodoroTodos', JSON.stringify(todos));
+        } catch(e){}
+    }
+
+    function renderTodos() {
+        todoList.innerHTML = '';
+        todos.forEach((todo, index) => {
+            const li = document.createElement('li');
+            li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+            
+            li.innerHTML = `
+                <label>
+                    <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${index})">
+                    <span>${escapeHtml(todo.text)}</span>
+                </label>
+                <button class="delete-btn" onclick="deleteTodo(${index})">&times;</button>
+            `;
+            todoList.appendChild(li);
+        });
+    }
+
+    function addTodo(e) {
+        e.preventDefault();
+        const text = todoInput.value.trim();
+        if (!text) return;
+
+        todos.push({ text, completed: false });
+        saveTodos();
+        renderTodos();
+        todoInput.value = '';
+    }
+
+    function toggleTodo(index) {
+        todos[index].completed = !todos[index].completed;
+        saveTodos();
+        renderTodos();
+    }
+
+    function deleteTodo(index) {
+        todos.splice(index, 1);
+        saveTodos();
+        renderTodos();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    updateDisplay();
+    renderStamps();
+    renderTodos();
+</script>
+
+</body>
+</html>
