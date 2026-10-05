@@ -10,7 +10,11 @@ from google.genai import types
 # ---------------------------------------------------------
 # 1. Gemini Client 및 헤더 설정
 # ---------------------------------------------------------
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LjkxF6Z4j0xAhyquj5ASu690ME094iRNmcv7JD3M1PYw") 
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY 환경변수가 설정되지 않았습니다. GitHub Secrets를 확인해 주세요.")
+
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 HEADERS = {
