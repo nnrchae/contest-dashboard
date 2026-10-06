@@ -1,11 +1,13 @@
 import json
 import re
 import os
+import time
 import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
 
 # ---------------------------------------------------------
 # 1. Gemini Client 및 헤더 설정
@@ -194,7 +196,7 @@ def fetch_campuspick_contests():
     return unique_items
 
 # ---------------------------------------------------------
-# 3. Gemini AI 분석 (dday 원본 유지 강제화)
+# 3. Gemini AI 분석 (dday 원본 유지 강제화 & 재시도 로직 추가)
 # ---------------------------------------------------------
 def parse_contest_data(raw_data_list):
     raw_data_json = json.dumps(raw_data_list, ensure_ascii=False)
@@ -224,157 +226,20 @@ def parse_contest_data(raw_data_list):
     다른 설명 없이 순수 JSON 배열만 출력해 주세요.
     """
     print(f"\n🤖 Gemini AI가 수집된 총 {len(raw_data_list)}개의 공모전 데이터를 분석 중...")
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.1),
-    )
-    clean_text = re.sub(r'```json\s*|\s*```', '', response.text).strip()
-    return json.loads(clean_text)
 
-# ---------------------------------------------------------
-# 4. 단일 HTML 파일 생성 함수
-# ---------------------------------------------------------
-def generate_html_dashboard(parsed_data):
-    json_str = json.dumps(parsed_data, ensure_ascii=False)
-    
-    html_content = f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>최신 디자인 공모전 대시보드</title>
-    <style>
-        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        body {{
-            background-color: #FAF8F5;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #2C2C2C;
-            padding: 40px 20px;
-        }}
-        .container {{ max-width: 1200px; margin: 0 auto; }}
-        header {{ text-align: center; margin-bottom: 40px; }}
-        header h1 {{ font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #111827; }}
-        header p {{ color: #6B7280; font-size: 16px; }}
-        .grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
-        }}
-        .card {{
-            text-decoration: none;
-            color: inherit;
-            background-color: #FFFFFF;
-            border: 1px solid #E8E2D9;
-            border-radius: 16px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-        }}
-        .card:hover {{
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-        }}
-        .card-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }}
-        .badge {{
-            background-color: #EEF2FF;
-            color: #4338CA;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }}
-        .dday {{ color: #EF4444; font-size: 13px; font-weight: 700; }}
-        .title {{ font-size: 18px; font-weight: bold; margin-bottom: 8px; line-height: 1.4; color: #1F2937; }}
-        .organizer {{ color: #6B7280; font-size: 14px; margin-bottom: 16px; }}
-        .score-box {{
-            background-color: #F9FAFB;
-            border: 1px solid #F3F4F6;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 14px;
-        }}
-        .score-title {{ font-weight: bold; color: #111827; font-size: 14px; margin-bottom: 4px; }}
-        .score-reason {{ font-size: 13px; color: #4B5563; line-height: 1.4; }}
-        .summary {{ font-size: 13px; color: #374151; line-height: 1.4; }}
-        .card-footer {{
-            margin-top: 20px;
-            padding-top: 12px;
-            border-top: 1px solid #F3F4F6;
-            text-align: right;
-            font-size: 13px;
-            color: #2563EB;
-            font-weight: 600;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🎨 최신 디자인 공모전 대시보드</h1>
-            <p>AI가 분석한 포트폴리오 가치 기반 추천 공모전 목록입니다.</p>
-        </header>
-        <div class="grid" id="contestGrid"></div>
-    </div>
+    # 과부하 대비 재시도(Retry) 로직
+    max_retries = 3
+    response = None
 
-    <script>
-        const contests = {json_str};
-        const grid = document.getElementById('contestGrid');
-
-        contests.forEach(item => {{
-            const card = document.createElement('a');
-            card.className = 'card';
-            card.href = item.link && item.link !== '#' ? item.link : '#';
-            card.target = '_blank';
-            card.rel = 'noopener noreferrer';
-
-            card.innerHTML = `
-                <div>
-                    <div class="card-header">
-                        <span class="badge">${{item.organizer_type || '공모전'}}</span>
-                        <span class="dday">${{item.deadline || item.dday || '접수중'}}</span>
-                    </div>
-                    <div class="title">${{item.title}}</div>
-                    <div class="organizer">🏢 ${{item.organizer}}</div>
-                    
-                    ${{item.portfolio_value_score ? `
-                    <div class="score-box">
-                        <div class="score-title">⭐ 포트폴리오 가치: ${{item.portfolio_value_score}} / 5</div>
-                        <div class="score-reason">${{item.portfolio_reason || ''}}</div>
-                    </div>` : ''}}
-
-                    ${{item.summary ? `<div class="summary">💡 ${{item.summary}}</div>` : ''}}
-                </div>
-                <div class="card-footer">상세내용 및 지원하기 ↗</div>
-            `;
-            grid.appendChild(card);
-        }});
-    </script>
-</body>
-</html>
-"""
-    output_path = os.path.join(os.path.dirname(__file__), "index.html")
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
-    
-    print(f"\n🎉 성공적으로 'index.html' 단일 대시보드 파일이 생성되었습니다!")
-    return output_path
-
-# ---------------------------------------------------------
-# 5. 메인 실행
-# ---------------------------------------------------------
-if __name__ == "__main__":
-    wevity = fetch_wevity_contests()
-    afy = fetch_allforyoung_contests()
-    cp = fetch_campuspick_contests()
-
-    all_items = wevity + afy + cp
-    print(f"\n📊 총 {len(all_items)}개의 공모전을 수집했습니다.")
-
-    if all_items:
-        parsed_list = parse_contest_data(all_items)
-        html_file = generate_html_dashboard(parsed_list)
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=0.1),
+            )
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_seconds = 5 * (attempt + 1)
+                print(f"  ⚠️ API 호출 중 일시적 오류가 발생하여 {wait_seconds}초 후 재시도합니다... ({attempt
