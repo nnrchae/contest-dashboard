@@ -194,7 +194,6 @@ def fetch_campuspick_contests():
             unique_items.append(item)
     print(f"  └ 캠퍼스픽에서 {len(unique_items)}개 수집 완료.")
     return unique_items
-
 # ---------------------------------------------------------
 # 3. Gemini AI 분석 (dday 원본 유지 강제화 & 재시도 로직 추가)
 # ---------------------------------------------------------
@@ -242,4 +241,11 @@ def parse_contest_data(raw_data_list):
         except Exception as e:
             if attempt < max_retries - 1:
                 wait_seconds = 5 * (attempt + 1)
-                print(f"  ⚠️ API 호출 중 일시적 오류가 발생하여 {wait_seconds}초 후 재시도합니다... ({attempt
+                print(f"  ⚠️ API 오류 발생. {wait_seconds}초 후 재시도합니다... ({attempt + 1}/{max_retries})")
+                time.sleep(wait_seconds)
+            else:
+                print("  ❌ Gemini API 재시도 횟수를 초과했습니다.")
+                raise e
+
+    clean_text = re.sub(r'```json\s*|\s*```', '', response.text).strip()
+    return json.loads(clean_text)
