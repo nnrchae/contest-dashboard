@@ -194,8 +194,9 @@ def fetch_campuspick_contests():
             unique_items.append(item)
     print(f"  └ 캠퍼스픽에서 {len(unique_items)}개 수집 완료.")
     return unique_items
+
 # ---------------------------------------------------------
-# 3. Gemini AI 분석 (dday 원본 유지 강제화 & 재시도 로직 추가)
+# 3. Gemini AI 분석 및 관련성(포트폴리오 가치 & 마감순) 정렬
 # ---------------------------------------------------------
 def parse_contest_data(raw_data_list):
     raw_data_json = json.dumps(raw_data_list, ensure_ascii=False)
@@ -248,4 +249,27 @@ def parse_contest_data(raw_data_list):
                 raise e
 
     clean_text = re.sub(r'```json\s*|\s*```', '', response.text).strip()
-    return json.loads(clean_text)
+    parsed_data = json.loads(clean_text)
+
+    # ---------------------------------------------------------
+    # 관련성(포트폴리오 가치 & 마감 임박도) 기준 정렬 로직 추가
+    # ---------------------------------------------------------
+    def sort_key(item):
+        # 1차 기준: portfolio_value_score 내림차순 (높은 점수가 우선)
+        score = item.get("portfolio_value_score", 3)
+        
+        # 2차 기준: 마감일 임박 순 (D-Day 숫자가 작을수록 우선)
+        deadline_str = item.get("deadline", "")
+        dday_match = re.search(r'D-(\d+)', deadline_str, re.IGNORECASE)
+        
+        if "오늘마감" in deadline_str or "D-Day" in deadline_str:
+            days = 0
+        elif dday_match:
+            days = int(dday_match.group(1))
+        else:
+            days = 999  # 마감 정보가 모호한 경우 후순위로 배치
+            
+        return (-score, days)
+
+    sorted_data = sorted(parsed_data, key=sort_key)
+    return sorted_data
