@@ -7,7 +7,6 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from google import genai
 from google.genai import types
-from google.genai.errors import APIError
 
 # ---------------------------------------------------------
 # 1. Gemini Client 및 헤더 설정
@@ -30,17 +29,10 @@ HEADERS = {
 # 날짜 파싱 및 D-Day 정확 계산 함수
 # ---------------------------------------------------------
 def calculate_dday_from_text(text):
-    """
-    텍스트 내에서 YYYY-MM-DD 또는 YYYY.MM.DD 형식의 날짜들을 모두 찾아,
-    시작일~종료일 패턴 중 '마감일(가장 마지막 날짜)'을 기준으로 D-Day를 정확히 계산합니다.
-    """
     if not text:
         return "접수중"
     
-    # D-33, D-5 등의 텍스트가 직접 존재하는 경우 최우선 활용
     dday_match = re.search(r'D-(\d+)', text, re.IGNORECASE)
-    
-    # 2026-10-01, 2026.10.01 등 YYYY-MM-DD 형태 추출
     dates = re.findall(r'(\d{4})[.-](\d{1,2})[.-](\d{1,2})', text)
     
     if not dates:
@@ -49,9 +41,7 @@ def calculate_dday_from_text(text):
             return f"D-{days_left}"
         return "접수중"
     
-    # 여러 날짜(시작일 ~ 종료일) 중 가장 '마지막' 날짜를 마감일로 지정
     year, month, day = map(int, dates[-1])
-    
     try:
         end_date = datetime(year, month, day).date()
         today = datetime.now().date()
@@ -67,18 +57,13 @@ def calculate_dday_from_text(text):
         return "접수중"
 
 def fetch_wevity_detail_info(detail_url):
-    """위비티 상세 페이지에서 정확한 접수 기간 및 D-Day를 추출합니다."""
     try:
         res = requests.get(detail_url, headers=HEADERS, timeout=5)
         res.encoding = 'utf-8'
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, 'html.parser')
-            
-            # 위비티 D-day 표시 태그 또는 접수기간 영역 우선 탐색
             dday_elem = soup.select_one('.dday, .day-box, .cd-info')
             text_content = soup.text if not dday_elem else dday_elem.text
-            
-            # '접수기간 2026-10-01 ~ 2026-11-02 D-33' 전체 텍스트 전달
             return calculate_dday_from_text(text_content)
     except Exception as e:
         print(f"    ⚠️ 위비티 상세페이지 파싱 실패 ({detail_url}): {e}")
@@ -89,7 +74,7 @@ def fetch_wevity_detail_info(detail_url):
 # ---------------------------------------------------------
 def fetch_wevity_contests():
     url = "https://www.wevity.com/?c=find&s=1&cidx=14"
-    print("🌐 [1/3] 위비티(Wevity) 최신 디자인 공모전 크롤링 중 (마감일 정밀 분석)...")
+    print("🌐 [1/3] 위비티(Wevity) 최신 디자인 공모전 크롤링 중...")
     extracted_items = []
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
@@ -107,19 +92,13 @@ def fetch_wevity_contests():
                 organizer_tag = item.select_one('.organ') or item.select_one('.sub-tit')
                 organizer = organizer_tag.text.strip() if organizer_tag else "주최사 정보 참조"
                 
-                # 상세 페이지에 들어가 마감일/D-Day 계산
                 exact_dday = fetch_wevity_detail_info(link)
-                
                 extracted_items.append({
-                    "source": "위비티", 
-                    "title": title, 
-                    "organizer": organizer, 
-                    "dday": exact_dday, 
-                    "link": link
+                    "source": "위비티", "title": title, "organizer": organizer, "dday": exact_dday, "link": link
                 })
     except Exception as e:
         print(f"  ⚠️ 위비티 예외: {e}")
-    print(f"  └ 위비티에서 {len(extracted_items)}개 수집 및 마감일 검증 완료.")
+    print(f"  └ 위비티에서 {len(extracted_items)}개 수집 완료.")
     return extracted_items
 
 def fetch_allforyoung_contests():
@@ -136,18 +115,13 @@ def fetch_allforyoung_contests():
                 post_id = p.get("id") or p.get("postId")
                 organizer_info = p.get("organizer", {})
                 organizer = organizer_info.get("name") if isinstance(organizer_info, dict) else "요즘것들 등록 주최사"
-                
                 finish_date = p.get("finishDate", "") or p.get("endDate", "")
                 dday_text = p.get("dDayText", "")
                 calculated_dday = calculate_dday_from_text(finish_date) if finish_date else (dday_text or "접수중")
 
                 if title and post_id:
                     extracted_items.append({
-                        "source": "요즘것들", 
-                        "title": title, 
-                        "organizer": organizer, 
-                        "dday": calculated_dday, 
-                        "link": f"https://allforyoung.com/posts/{post_id}"
+                        "source": "요즘것들", "title": title, "organizer": organizer, "dday": calculated_dday, "link": f"https://allforyoung.com/posts/{post_id}"
                     })
     except Exception as e:
         print(f"  ⚠️ 요즘것들 예외: {e}")
@@ -168,21 +142,15 @@ def fetch_campuspick_contests():
                 title_elem = item.select_one('.title, h2, h3')
                 title = title_elem.text.strip() if title_elem else item.text.strip()
                 if not title or len(title) < 4: continue
-                
                 href = item.get('href', '')
                 full_link = f"https://www.campuspick.com{href}" if href.startswith('/') else href
                 organizer_elem = item.select_one('.company, .organ')
                 organizer = organizer_elem.text.strip() if organizer_elem else "주최사 참조"
-                
                 dday_elem = item.select_one('.dday, .badge, .d-day')
                 dday_str = dday_elem.text.strip() if dday_elem else calculate_dday_from_text(item.text)
 
                 extracted_items.append({
-                    "source": "캠퍼스픽", 
-                    "title": title, 
-                    "organizer": organizer, 
-                    "dday": dday_str, 
-                    "link": full_link
+                    "source": "캠퍼스픽", "title": title, "organizer": organizer, "dday": dday_str, "link": full_link
                 })
     except Exception as e:
         print(f"  ⚠️ 캠퍼스픽 예외: {e}")
@@ -196,7 +164,7 @@ def fetch_campuspick_contests():
     return unique_items
 
 # ---------------------------------------------------------
-# 3. Gemini AI 분석 및 포트폴리오 가치(관련성) 최우선 정렬
+# 3. Gemini AI 분석 및 포트폴리오 가치 순 정렬
 # ---------------------------------------------------------
 def parse_contest_data(raw_data_list):
     raw_data_json = json.dumps(raw_data_list, ensure_ascii=False)
@@ -227,10 +195,8 @@ def parse_contest_data(raw_data_list):
     """
     print(f"\n🤖 Gemini AI가 수집된 총 {len(raw_data_list)}개의 공모전 데이터를 분석 중...")
 
-    # 과부하 대비 재시도(Retry) 로직
     max_retries = 3
     response = None
-
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
@@ -245,19 +211,157 @@ def parse_contest_data(raw_data_list):
                 print(f"  ⚠️ API 오류 발생. {wait_seconds}초 후 재시도합니다... ({attempt + 1}/{max_retries})")
                 time.sleep(wait_seconds)
             else:
-                print("  ❌ Gemini API 재시도 횟수를 초과했습니다.")
                 raise e
 
     clean_text = re.sub(r'```json\s*|\s*```', '', response.text).strip()
     parsed_data = json.loads(clean_text)
 
-    # ---------------------------------------------------------
-    # 포트폴리오 가치 점수를 명확한 정수(int)로 변환하여 높은 순서(내림차순)대로 정렬
-    # ---------------------------------------------------------
+    # 파이썬 레벨에서 확실하게 포트폴리오 가치 점수 내림차순 정렬
     sorted_data = sorted(
         parsed_data, 
         key=lambda x: int(x.get("portfolio_value_score", 3)), 
         reverse=True
     )
-    
     return sorted_data
+
+# ---------------------------------------------------------
+# 4. 정렬된 데이터를 포함하여 index.html 파일을 자동으로 생성하는 함수
+# ---------------------------------------------------------
+def generate_html_dashboard(contests_data):
+    html_content = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>최신 디자인 공모전 대시보드</title>
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            background-color: #FAF8F5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #2C2C2C;
+            padding: 40px 20px;
+        }}
+        .container {{ max-width: 1200px; margin: 0 auto; }}
+        header {{ text-align: center; margin-bottom: 40px; }}
+        header h1 {{ font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #111827; }}
+        header p {{ color: #6B7280; font-size: 16px; }}
+        .grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }}
+        .card {{
+            text-decoration: none;
+            color: inherit;
+            background-color: #FFFFFF;
+            border: 1px solid #E8E2D9;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }}
+        .card:hover {{
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }}
+        .card-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }}
+        .badge {{
+            background-color: #EEF2FF;
+            color: #4338CA;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }}
+        .dday {{ color: #EF4444; font-size: 13px; font-weight: 700; }}
+        .title {{ font-size: 18px; font-weight: bold; margin-bottom: 8px; line-height: 1.4; color: #1F2937; }}
+        .organizer {{ color: #6B7280; font-size: 14px; margin-bottom: 16px; }}
+        .score-box {{
+            background-color: #F9FAFB;
+            border: 1px solid #F3F4F6;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+        }}
+        .score-title {{ font-weight: bold; color: #111827; font-size: 14px; margin-bottom: 4px; }}
+        .score-reason {{ font-size: 13px; color: #4B5563; line-height: 1.4; }}
+        .summary {{ font-size: 13px; color: #374151; line-height: 1.4; }}
+        .card-footer {{
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #F3F4F6;
+            text-align: right;
+            font-size: 13px;
+            color: #2563EB;
+            font-weight: 600;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 최신 디자인 공모전 대시보드</h1>
+            <p>AI가 분석한 포트폴리오 가치 기반 추천 공모전 목록입니다.</p>
+        </header>
+        <div class="grid" id="contestGrid"></div>
+    </div>
+
+    <script>
+        const contests = {json.dumps(contests_data, ensure_ascii=False)};
+        
+        const grid = document.getElementById('contestGrid');
+        contests.forEach(item => {{
+            const card = document.createElement('a');
+            card.className = 'card';
+            card.href = item.link && item.link !== '#' ? item.link : '#';
+            card.target = '_blank';
+            card.rel = 'noopener noreferrer';
+
+            card.innerHTML = `
+                <div>
+                    <div class="card-header">
+                        <span class="badge">${{item.organizer_type || '공모전'}}</span>
+                        <span class="dday">${{item.deadline || item.dday || '접수중'}}</span>
+                    </div>
+                    <div class="title">${{item.title}}</div>
+                    <div class="organizer">🏢 ${{item.organizer}}</div>
+                    
+                    ${{item.portfolio_value_score ? `
+                    <div class="score-box">
+                        <div class="score-title">⭐ 포트폴리오 가치: ${{item.portfolio_value_score}} / 5</div>
+                        <div class="score-reason">${{item.portfolio_reason || ''}}</div>
+                    </div>` : ''}}
+
+                    ${{item.summary ? `<div class="summary">💡 ${{item.summary}}</div>` : ''}}
+                </div>
+                <div class="card-footer">상세내용 및 지원하기 ↗</div>
+            `;
+            grid.appendChild(card);
+        }});
+    </script>
+</body>
+</html>
+"""
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print("✨ 정렬된 데이터가 반영된 'index.html' 파일이 성공적으로 생성되었습니다!")
+
+# ---------------------------------------------------------
+# 메인 실행 흐름
+# ---------------------------------------------------------
+if __name__ == "__main__":
+    raw_list = []
+    raw_list.extend(fetch_wevity_contests())
+    raw_list.extend(fetch_allforyoung_contests())
+    raw_list.extend(fetch_campuspick_contests())
+    
+    if raw_list:
+        analyzed_data = parse_contest_data(raw_list)
+        generate_html_dashboard(analyzed_data)
+    else:
+        print("⚠️ 수집된 공모전 데이터가 없습니다.")
